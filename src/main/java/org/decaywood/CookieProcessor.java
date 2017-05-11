@@ -2,6 +2,7 @@ package org.decaywood;
 
 import org.decaywood.utils.FileLoader;
 import org.decaywood.utils.RequestParaBuilder;
+import org.decaywood.utils.URLMapper;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -13,30 +14,59 @@ import java.net.URL;
 public interface CookieProcessor {
 
 
+    /**
+     * 其实不需要登录也可以刷新cookie, 只需要访问任何一个页面, 例如主页
+     * 处理还是一样, 在返回的response header 中获取 set-cookie 字段
+     * @param website
+     * @throws Exception
+     */
     default void updateCookie(String website) throws Exception {
 
-        GlobalSystemConfigLoader.loadConfig();
+        URL url = new URL(URLMapper.MAIN_PAGE.toString());
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        String areacode = System.getProperty("areaCode");
-        String userID = System.getProperty("userID");
-        String passwd = System.getProperty("password");
-        boolean rememberMe = Boolean.parseBoolean(System.getProperty("rememberMe"));
+        try {
+            connection.connect();
 
-        HttpURLConnection connection = null;
-        if (userID != null && passwd != null) {
-            connection = login(areacode, userID, passwd, rememberMe);
+            String cookie = connection.getHeaderFields().get("Set-Cookie")
+                    .stream()
+                    .map(x -> x.split(";")[0].concat(";"))
+                    .reduce("", String::concat);
+            FileLoader.updateCookie(cookie, website);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
 
-        connection = connection == null ?
-                (HttpURLConnection) new URL(website).openConnection() : connection;
-        connection.connect();
+//        return;
+//
+//        GlobalSystemConfigLoader.loadConfig();
+//
+//        String areacode = System.getProperty("areaCode");
+//        String userID = System.getProperty("userID");
+//        String passwd = System.getProperty("password");
+//        boolean rememberMe = Boolean.parseBoolean(System.getProperty("rememberMe"));
+//
+//        HttpURLConnection connection = null;
+//        if (userID != null && passwd != null) {
+//            connection = login(areacode, userID, passwd, rememberMe);
+//        }
+//        try {
+//            connection = connection == null ?
+//                    (HttpURLConnection) new URL(website).openConnection() : connection;
+//            connection.connect();
+//
+//            String cookie = connection.getHeaderFields().get("Set-Cookie")
+//                    .stream()
+//                    .map(x -> x.split(";")[0].concat(";"))
+//                    .filter(x -> x.contains("token=") || x.contains("s="))
+//                    .reduce("", String::concat);
+//            FileLoader.updateCookie(cookie, website);
+//        } finally {
+//            if (connection != null) connection.disconnect();
+//        }
 
-        String cookie = connection.getHeaderFields().get("Set-Cookie")
-                .stream()
-                .map(x -> x.split(";")[0].concat(";"))
-                .filter(x -> x.contains("token=") || x.contains("s="))
-                .reduce("", String::concat);
-        FileLoader.updateCookie(cookie, website);
     }
 
     default HttpURLConnection login(String areacode,

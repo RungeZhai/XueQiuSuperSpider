@@ -13,8 +13,14 @@ import org.decaywood.mapper.stockFirst.StockToStockWithStockTrendMapper;
 import org.decaywood.utils.MathUtils;
 import org.junit.Test;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -25,10 +31,29 @@ import java.util.stream.Collectors;
  */
 public class StreamTest {
 
+    static {
+        // Create a trust manager that does not validate certificate chains
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager(){
+            public X509Certificate[] getAcceptedIssuers(){return null;}
+            public void checkClientTrusted(X509Certificate[] certs, String authType){}
+            public void checkServerTrusted(X509Certificate[] certs, String authType){}
+        }};
+
+        // Install the all-trusting trust manager
+        try {
+            SSLContext sc = SSLContext.getInstance("TLS");
+            sc.init(null, trustAllCerts, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        } catch (Exception e) {
+            ;
+        }
+    }
+
 
     //一阳穿三线个股
     @Test
     public void yiyinsanyang() throws RemoteException {
+
         List<Stock> stocks = TestCaseGenerator.generateStocks();
 
         StockToStockWithAttributeMapper attributeMapper = new StockToStockWithAttributeMapper();
@@ -60,7 +85,11 @@ public class StreamTest {
 
     }
 
-    //按关键字过滤页面
+    /**
+     * 首先获取沪深板块热点新闻
+     * 按关键字过滤页面
+     * @throws RemoteException
+     */
     @Test
     public void findNewsUcareAbout() throws RemoteException {
         List<URL> news = new HuShenNewsRefCollector(HuShenNewsRefCollector.Topic.TOTAL, 2).get();
@@ -196,6 +225,17 @@ public class StreamTest {
             }
         }
 
+    }
+
+    @Test
+    public void testStringOccurrence() {
+        String str = "symbolundefined.com";
+        System.out.println(str.indexOf("symbol"));
+        boolean bool = str.contains("symbolundefined");
+        int index = str.indexOf("symbol"); // 0
+
+        int lastIndex = str.lastIndexOf("e");
+        int indexFrom = str.indexOf("e", 11);
     }
 
 

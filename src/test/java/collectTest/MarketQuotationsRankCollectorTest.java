@@ -48,7 +48,7 @@ public class MarketQuotationsRankCollectorTest {
                         MarketQuotationsRankCollector.ORDER_BY_TURNOVER_RATE,
                         100);
         List<Stock> stocks = collector.get();
-        Assert.assertTrue(stocks.size() == MarketQuotationsRankCollector.TOPK_MAX_SHRESHOLD);
+        Assert.assertTrue(stocks.size() <= MarketQuotationsRankCollector.TOPK_MAX_SHRESHOLD);
     }
 
     @Test

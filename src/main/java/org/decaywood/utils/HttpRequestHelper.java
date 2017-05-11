@@ -26,7 +26,7 @@ public class HttpRequestHelper {
                 .addToHeader("Referer", webSite)
                 .addToHeader("Cookie", FileLoader.loadCookie(webSite))
                 .addToHeader("Host", "xueqiu.com")
-                .addToHeader("Accept-Encoding", "gzip,deflate,sdch");
+                .addToHeader("Accept-Encoding", "gzip,deflate,sdch,br");
     }
 
     public HttpRequestHelper post() {
