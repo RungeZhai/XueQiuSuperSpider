@@ -12,7 +12,7 @@ public class Industry implements DeepCopy<Industry> {
 
     private final String industryName;//板块名字
 
-    private final String industryInfo;//板块代码
+    private final String industryInfo;//板块代码(获取该行业下的上市公司所需要的参数)
 
 
     public Industry(final String industryName, final String industrySiteURL) {

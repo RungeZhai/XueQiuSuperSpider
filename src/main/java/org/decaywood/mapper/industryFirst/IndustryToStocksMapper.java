@@ -21,6 +21,10 @@ import java.util.List;
 
 /**
  * 行业 -> 该行业股票 映射器
+ * 根据行业获取该行业的所有股票
+ * URL 示例:
+ * https://xueqiu.com/industry/quote_order.json?page=1&size=500&order=desc&orderBy=percent&exchange=CN&plate=1_2_2&firstName=1&secondName=1_2&level2code=A03
+ *
  */
 public class IndustryToStocksMapper extends AbstractMapper<Industry, List<Stock>> {
 
@@ -57,8 +61,12 @@ public class IndustryToStocksMapper extends AbstractMapper<Industry, List<Stock>
         String json = request(url);
         JsonNode jsonNode = mapper.readTree(json);
 
-        return parserJson(jsonNode);
+        List<Stock> stocks = parserJson(jsonNode);
 
+        // stock 和行业(industry)做一个关联
+        stocks.stream().forEach(x -> x.setIndustry(industry));
+
+        return stocks;
     }
 
 

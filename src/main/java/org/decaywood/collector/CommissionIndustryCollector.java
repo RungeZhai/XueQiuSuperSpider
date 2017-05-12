@@ -45,12 +45,13 @@ public class CommissionIndustryCollector extends AbstractCollector<List<Industry
         Document doc = Jsoup.parse(content);
         Elements element = doc.getElementsByClass("second-nav")
                 .get(1).children()
-                .get(3).children()
+                .get(2).children()// 证监会行业从第 4 位 升为第 3 位
                 .get(3).children()
                 .select("a");
         StringBuilder builder = new StringBuilder();
         for (Element ele : element) {
             if (!ele.hasAttr("title") || !ele.hasAttr("href")) continue;
+            // href 是获取行业下所有上市公司的接口需要的参数
             builder.append(ele.attr("href"));
             res.add(new Industry(ele.attr("title"), builder.toString()));
             builder.delete(0, builder.length());
