@@ -1,6 +1,8 @@
 package org.decaywood.utils;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,16 +17,26 @@ public abstract class FileLoader {
 
     private static final Map<String, String> cookie = new ConcurrentHashMap<>();//多线程写状态，存在并发
 
-
-
     /**
      * 加载最新cookie
      * @param key 关键字
      * @return cookie
      */
     public static String loadCookie(String key) {
-        if(cookie.containsKey(key)) return cookie.get(key);
-        return EmptyObject.emptyString;
+
+        // 内存中没有的话, 从本地文件中读取
+        if (cookie.size() == 0) {
+            String cookieFromLocalStorage = loadFile("cookie/" + domainNameFromURL(key) + ".txt", new StringBuilder(), 3);
+            if (cookieFromLocalStorage != null && cookieFromLocalStorage.length() > 0) {
+                cookie.put(key, cookieFromLocalStorage);
+            }
+        }
+
+        if(cookie.containsKey(key)) {
+            return cookie.get(key);
+        } else {
+            return EmptyObject.emptyString;
+        }
     }
 
 
@@ -36,13 +48,14 @@ public abstract class FileLoader {
      */
     public static void updateCookie(String cookie, String key) {
         FileLoader.cookie.put(key, cookie);
-        String replacedKey = key.contains(".com") ? key.substring(7, key.indexOf(".com")) : key;
-        updateCookie(COOKIE_FLUSH_PATH, cookie, replacedKey);
+
+
+        updateCookie(COOKIE_FLUSH_PATH, cookie, domainNameFromURL(key));
     }
 
 
     public static void updateCookie(String rawPath, String text, String key) {
-        updateCookie(rawPath, text, key, new StringBuilder(), true);
+        updateCookie(rawPath, text, key, new StringBuilder(), false);
     }
 
 
@@ -92,12 +105,46 @@ public abstract class FileLoader {
     }
 
     /**
+     *
+     * @param rawPath
+     * @param builder
+     * @param step     递归深度(还是不理解为什么不直接指定位置, 要向上回溯)
+     * @return
+     */
+    private static String loadFile(String rawPath, StringBuilder builder, int step) {
+
+        if (--step >= 0) {
+            String path = ROOT_PATH + rawPath;
+            File file = new File(path);
+            if (!file.exists()) {
+                return loadFile(builder.append("../").toString() + rawPath, builder, step);
+            } else {
+                return loadFileContent(file);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * 加载文件内容（文件必须存在）
      * @param rawPath 文件相对位置
      * @return 文件内容
      */
     private static String loadFileContent(String rawPath, StringBuilder builder) {
         File file = loadFile(rawPath, builder);
+        return loadFileContent(file);
+    }
+
+    public static File loadFile(String rawPath) {
+        return loadFile(rawPath, new StringBuilder());
+    }
+
+    public static String loadFileContent(String rawPath) {
+        return loadFileContent(rawPath, new StringBuilder());
+    }
+
+    private static String loadFileContent(File file) {
         StringBuilder content = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String text;
@@ -110,12 +157,26 @@ public abstract class FileLoader {
         return content.toString();
     }
 
-    public static File loadFile(String rawPath) {
-        return loadFile(rawPath, new StringBuilder());
-    }
 
-    public static String loadFileContent(String rawPath) {
-        return loadFileContent(rawPath, new StringBuilder());
+    /**
+     * http://www.xueqiu.com -> xueqiu.com
+     * @param URL
+     * @return
+     */
+    private static String domainNameFromURL(String URL) {
+        String replacedKey = "";
+        try {
+            replacedKey = new URI(URL).getHost();
+        } catch (URISyntaxException e) {
+            System.out.println("Illeal URL: " + URL);
+        }
+
+        String prefix = "www.";
+        if (replacedKey.startsWith(prefix)) {
+            replacedKey.substring(prefix.length());
+        }
+
+        return replacedKey;
     }
 
 }
