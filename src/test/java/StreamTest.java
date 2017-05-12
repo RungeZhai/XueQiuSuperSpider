@@ -77,11 +77,24 @@ public class StreamTest {
 
         };
 
-        stocks.parallelStream()
+        List<String> filteredStocks = stocks.parallelStream()
                 .map(x -> new Entry<>(x.getStockName(), attributeMapper.andThen(trendMapper).apply(x)))
                 .filter(predicate)
                 .map(Entry::getKey)
-                .forEach(System.out::println);
+                .collect(Collectors.toList());
+
+        if (filteredStocks.size() == 0) {
+            System.out.println("\n没有满足条件的个股\n");
+        } else {
+            filteredStocks.parallelStream()
+                    .forEach(System.out::println);
+        }
+
+//        stocks.parallelStream()
+//                .map(x -> new Entry<>(x.getStockName(), attributeMapper.andThen(trendMapper).apply(x)))
+//                .filter(predicate)
+//                .map(Entry::getKey)
+//                .forEach(System.out::println);
 
     }
 
