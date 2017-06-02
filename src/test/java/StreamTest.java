@@ -1,3 +1,4 @@
+import entryFirst.UserInfoToDBAcceptor;
 import mapperTest.TestCaseGenerator;
 import org.decaywood.collector.*;
 import org.decaywood.entity.*;
@@ -10,6 +11,7 @@ import org.decaywood.mapper.industryFirst.IndustryToStocksMapper;
 import org.decaywood.mapper.stockFirst.StockToLongHuBangMapper;
 import org.decaywood.mapper.stockFirst.StockToStockWithAttributeMapper;
 import org.decaywood.mapper.stockFirst.StockToStockWithStockTrendMapper;
+import org.decaywood.mapper.stockFirst.StockToVIPFollowerCountEntryMapper;
 import org.decaywood.utils.MathUtils;
 import org.junit.Test;
 
@@ -119,18 +121,22 @@ public class StreamTest {
 
 
     //创业板股票大V统计 （耗时过长）
-/*    @Test
+    @Test
     public void getMarketStockFundTrend() {
-        MarketQuotationsRankCollector collector = new MarketQuotationsRankCollector(
-                MarketQuotationsRankCollector.StockType.GROWTH_ENTERPRISE_BOARD,
-                MarketQuotationsRankCollector.ORDER_BY_VOLUME, 500);
-        StockToVIPFollowerCountEntryMapper mapper1 = new StockToVIPFollowerCountEntryMapper(3000, 300);//搜集每个股票的粉丝
-        UserInfoToDBAcceptor acceptor = new UserInfoToDBAcceptor();//写入数据库
-        collector.get()
-                .parallelStream() //并行流
-                .map(mapper1)
-                .forEach(acceptor);//结果写入数据库
-    }*/
+        try {
+            MarketQuotationsRankCollector collector = new MarketQuotationsRankCollector(
+                    MarketQuotationsRankCollector.StockType.GROWTH_ENTERPRISE_BOARD,
+                    MarketQuotationsRankCollector.ORDER_BY_VOLUME, 500);
+            StockToVIPFollowerCountEntryMapper mapper1 = new StockToVIPFollowerCountEntryMapper(3000, 300);//搜集每个股票的粉丝
+            UserInfoToDBAcceptor acceptor = new UserInfoToDBAcceptor();//写入数据库
+            collector.get()
+                    .parallelStream() //并行流
+                    .map(mapper1)
+                    .forEach(acceptor);//结果写入数据库
+        } catch (RemoteException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
 
     //统计股票5000粉以上大V个数，并以行业分类股票 （耗时过长）
@@ -257,9 +263,9 @@ public class StreamTest {
     @Test
     public void LongHuBangTracking() throws RemoteException {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2015, Calendar.DECEMBER, 1);
+        calendar.set(2017, Calendar.MAY, 1);
         Date from = calendar.getTime();
-        calendar.set(2015, Calendar.DECEMBER, 7);
+        calendar.set(2017, Calendar.MAY, 7);
         Date to = calendar.getTime();
         DateRangeCollector collector = new DateRangeCollector(from, to);
         DateToLongHuBangStockMapper mapper = new DateToLongHuBangStockMapper();
@@ -268,11 +274,15 @@ public class StreamTest {
                 .parallelStream()
                 .map(mapper)
                 .flatMap(List::stream).map(mapper1)
-                .filter(x -> x.bizsunitInBuyList("溧阳路", true))
+                .filter(x -> x.bizsunitInBuyList("青岛", true))
                 .sorted(Comparator.comparing(LongHuBangInfo::getDate))
                 .collect(Collectors.toList());
-        for (LongHuBangInfo info : s) {
-            System.out.println(info.getDate() + " -> " + info.getStock().getStockName());
+        if (s.size() == 0) {
+            System.out.println("无符合条件数据");
+        } else {
+            for (LongHuBangInfo info : s) {
+                System.out.println(info.getDate() + " -> " + info.getStock().getStockName());
+            }
         }
 
     }
